@@ -18,42 +18,63 @@ def get_db():
         db.close()
 
 
-# works
-@app.post("/expanse/", response_model=schemas.ExpenseBase)
-def create_expanse(expanse: schemas.ExpenseBase, db: Session = Depends(get_db)):
-    return crud.create_expanse(db=db, expanse=expanse)
+# POST expense into psql
+@app.post("/expense/", response_model=schemas.ExpenseBase)
+def create_expense(expense: schemas.ExpenseBase, db: Session = Depends(get_db)):
+    return crud.create_expense(db=db, expense=expense)
     
 
-# works
-@app.delete("/expanse/{expanse_id}")
-def delete_expanse(expanse_id: int, db:Session = Depends(get_db)):
-    db_item = crud.get_expanse_by_id(db, expanse_id=expanse_id)
+# DEL expense by id
+@app.delete("/expense/{expense_id}")
+def delete_expense(expense_id: int, db:Session = Depends(get_db)):
+    db_item = crud.get_expense_by_id(db, expense_id=expense_id)
     if db_item is None:
         raise HTTPException(status_code=404, detail="Expense not found")
-    return crud.delete_expanse(db=db, expanse_id=expanse_id) 
+    return crud.delete_expense(db=db, expense_id=expense_id) 
 
-# works
-@app.get("/expanse/{expanse_id}", response_model=schemas.Expense)
-def get_expanse_by_id(expanse_id: int, db: Session = Depends(get_db)):
-    db_item = crud.get_expanse_by_id(db, expanse_id=expanse_id)
+
+# GET expense by id
+@app.get("/expense/{expense_id}", response_model=schemas.Expense)
+def get_expense_by_id(expense_id: int, db: Session = Depends(get_db)):
+    db_item = crud.get_expense_by_id(db, expense_id=expense_id)
     if db_item is None:
-        raise HTTPException(status_code=404, detail="Expense not found")
+        raise HTTPException(status_code=404, detail="Expenses not found")
     return db_item
 
 
-@app.get("/expanses/", response_model=list[schemas.Expense])
-def get_expanses_by_date(expanse_date: date, db: Session = Depends(get_db), limit:int=100):
-    db_items = crud.get_expanse_by_date(db, expanse_date=expanse_date)
+# GET expenses all
+@app.get("/expenses", response_model=list[schemas.Expense])
+def get_all_exenses(db: Session = Depends(get_db)):
+    db_items = crud.get_expenses_all(db)
     if db_items is None:
-        raise HTTPException(status_code=404, detail="Can't find any expanse on this date")
+        raise HTTPException(status_code=404, detail="Expense not found")
+    return db_items
+    
+
+# GET expenses by date
+@app.get("/expenses/date/", response_model=list[schemas.Expense])
+def get_expenses_by_date(expense_date: date, db: Session = Depends(get_db), limit:int=100):
+    db_items = crud.get_expense_by_date(db, expense_date=expense_date, limit=limit)
+    if db_items is None:
+        raise HTTPException(status_code=404, detail="Can't find any expense on this date")
     return db_items
 
 
-# works
-@app.put("/expanse/", response_model=schemas.ExpenseBase)
-def change_expanse(expanse_id: int, expanse: schemas.ExpenseBase, db: Session = Depends(get_db)):
-    db_item = crud.get_expanse_by_id(db, expanse_id=expanse_id)
+# GET expenses by date range
+@app.get("/expenses/daterange/", response_model=list[schemas.Expense])
+def get_expenses_by_date_range(start_date: date, end_date: date, db: Session = Depends(get_db), limit:int=100):
+    db_items = crud.get_expenses_by_date_range(db=db, start_date=start_date, end_date=end_date, limit=limit)
+    if db_items is None:
+        raise HTTPException(status_code=404, detail="Can't find any expense in this date range")
+    return db_items
+
+
+# PUT expense in psql
+@app.put("/expense/", response_model=schemas.ExpenseBase)
+def change_expense(expense_id: int, expense: schemas.ExpenseBase, db: Session = Depends(get_db)):
+    db_item = crud.get_expense_by_id(db, expense_id=expense_id)
     if db_item is None:
         raise HTTPException(status_code=404, detail="Expense not found")
-    crud.delete_expanse(db=db, expanse_id=expanse_id)
-    return crud.create_expanse(db=db, expanse=expanse)
+    crud.delete_expense(db=db, expense_id=expense_id)
+    return crud.create_expense(db=db, expense=expense)
+

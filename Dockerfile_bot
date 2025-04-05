@@ -5,6 +5,7 @@ WORKDIR /bot
 RUN pip install -U aiogram
 RUN pip install asyncio
 RUN pip install requests
+RUN pip install prettytable
 
 COPY ./bot /bot
 

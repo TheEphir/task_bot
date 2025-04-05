@@ -36,12 +36,12 @@ services:
     ports:
       - 8080:8080
   
-  # bot:
-  #   build: 
-  #     dockerfile: Dockerfile_bot
-  #   volumes:
-  #     - ./bot:/bot
-  #   depends_on:
-  #     - api
-  #   environment:
-  #     BOT_TOKEN: 
+  bot:
+    build: 
+      dockerfile: Dockerfile_bot
+    volumes:
+      - ./bot:/bot
+    # depends_on:
+    #   - api
+    environment:
+      BOT_TOKEN: 7010347939:AAHpg3vT0dYZgK4QKe2k0omqzx51QkFjuxQ
