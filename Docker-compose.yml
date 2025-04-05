@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres
+    restart: always
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    # or set shared memory limit when deploy via swarm stack
+    #volumes:
+    #  - type: tmpfs
+    #    target: /dev/shm
+    #    tmpfs:
+    #      size: 134217728 # 128*2^20 bytes = 128Mb
+    environment:
+      POSTGRES_PASSWORD: example
+  
+  api:
+    build: 
+      dockerfile: Dockerfile_api
+    volumes:
+      - ./api:/api
+    depends_on:
+      - db
+    environment:
+      - PS_USER=postgres  # SHOULD CHANGE IT
+      - PS_PASS=example # SHOULD CHANGE IT 
+      - PS_SERVER=db # SHOULD CHANGE IT
+      - PS_DB=postgres # SHOULD CHANGE IT
+    ports:
+      - 80:80
+      
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  
+  # bot:
+  #   build: 
+  #     dockerfile: Dockerfile_bot
+  #   volumes:
+  #     - ./bot:/bot
+  #   depends_on:
+  #     - api
+  #   environment:
+  #     BOT_TOKEN: 
