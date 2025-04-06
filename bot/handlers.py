@@ -7,8 +7,6 @@ from aiogram.types import Message, FSInputFile, InlineKeyboardMarkup, InlineKeyb
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # commands:
     # add_expense
@@ -16,10 +14,9 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
     # remove_expense
     # edit_expense
 
-memo = MemoryStorage()
-
 API_URL= "http://api:80"
 HELP_MSG = "This is help message"
+ERR_MSG = "Something went wrong with API"
 
 # ============= ROUTER =================
 router = Router()
@@ -70,7 +67,7 @@ async def post_expense_state_descr(message: Message, state: FSMContext):
 @router.message(Postexpense.uah_amount)
 async def post_expense_state_uah(message: Message, state: FSMContext):
     await state.update_data(uah_amount=message.text)
-    await message.answer(f"Введіть будь ласка дату.")
+    await message.answer(f"Введіть будь ласка дату у форматі dd.mm.YYYY")
     await state.set_state(Postexpense.expense_date)
     
     
@@ -78,14 +75,15 @@ async def post_expense_state_uah(message: Message, state: FSMContext):
 async def post_expense_state_date(message: Message, state: FSMContext):
     await state.update_data(expense_date=message.text)
     expense_data = await state.get_data()
-    msg = f"Додано витрату\n<code>{expense_data["description"]}\t|\t{expense_data["uah_amount"]}\t|\t{expense_data["expense_date"]}</code>"
-       
+   
     db_item = {
         "description": expense_data["description"],
         "uah_amount": float(expense_data["uah_amount"]),
         "date": utils.to_db_date(expense_data["expense_date"])
     }
     requests.post(f"{API_URL}/expense/", json=db_item)
+    
+    msg = f"Додано витрату\n<code>{expense_data["description"]}\t|\t{expense_data["uah_amount"]}\t|\t{expense_data["expense_date"]}</code>"
     await state.clear()
     await message.answer(msg, parse_mode="HTML")
     await message.answer(f"Що бажаєте зробити?", reply_markup=MAIN_KEYBOARD)
@@ -119,10 +117,10 @@ async def post_expense_state_descr(message: Message, state: FSMContext):
     dates = await state.get_data()
     
     expenses_by_date_range = requests.get(f"{API_URL}/expenses/daterange/", params={"start_date": utils.to_db_date(dates["start_date"]), "end_date":utils.to_db_date(dates["end_date"])}).json()
-    table = utils.make_table(expenses_by_date_range)
-    answ = f"Ваш звіт\n<code>{table}</code>"
-    
-    await message.answer(answ, parse_mode="HTML")
+    utils.make_xlsx_file(expenses_by_date_range)
+    file = FSInputFile("./Expenses.xlsx", filename=f"Expenses {dates["start_date"]} - {dates['end_date']}.xlsx")
+
+    await message.answer_document(file,caption=f"Ваш звіт за {dates["start_date"]} - {dates['end_date']}:")
     await state.clear()
     await message.answer(f"Що бажаєте зробити?", reply_markup=MAIN_KEYBOARD)
     
@@ -136,16 +134,12 @@ class RemoveExpenses(StatesGroup):
 @router.callback_query(F.data == "remove_expense")
 async def get_all_expenses(callback: CallbackQuery, state: FSMContext):
     await callback.answer("")
-    
     expenses = requests.get(f"{API_URL}/expenses/").json()
-    # table = utils.make_table(expenses)
-    # answ = f"Всі ваші витрати\n<code>{table}</code>"
     utils.make_xlsx_file(expenses)
     
     file = FSInputFile("./Expenses.xlsx", filename=f"Expenses-{date.today()}.xlsx")
-    
-    answ = f"Звіт по всім питратам"
-    # await callback.message.answer(answ, parse_mode="HTML")
+    answ = f"Звіт по всім витратам"
+
     await callback.message.answer_document(file, caption=answ)
     await callback.message.answer(f"Напишіть ід витрати котру ви хочете видалити")
     await state.set_state(RemoveExpenses.expense_id)
@@ -177,10 +171,12 @@ async def get_all_expenses(callback: CallbackQuery, state: FSMContext):
     await callback.answer("")
     
     expenses = requests.get(f"{API_URL}/expenses/").json()
-    table = utils.make_table(expenses)
-    answ = f"Всі ваші витрати\n<code>{table}</code>"
+    utils.make_xlsx_file(expenses)
     
-    await callback.message.answer(answ, parse_mode="HTML")
+    file = FSInputFile("./Expenses.xlsx", filename=f"Expenses-{date.today()}.xlsx")
+    answ = f"Звіт по всім витратам"
+
+    await callback.message.answer_document(file, caption=answ)
     await callback.message.answer(f"Напишіть ід витрати котру ви хочете редагувати")
     await state.set_state(PutExpense.to_edit_expense_id)
 
