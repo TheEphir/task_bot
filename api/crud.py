@@ -14,6 +14,9 @@ def create_expense(db: Session, expense: schemas.ExpenseBase) -> schemas.Expense
     return db_item
 
 def get_expenses_all(db: Session) -> list[models.Expenses]:
+    """
+    Return: list which sorted by Date and by Id
+    """
     return db.query(models.Expenses).order_by(models.Expenses.date).order_by(models.Expenses.id).all()
 
 
@@ -26,6 +29,9 @@ def get_expense_by_date(db: Session, expense_date: date, limit: int = 100) -> li
 
 
 def get_expenses_by_date_range(db: Session, start_date: date, end_date: date, limit: int=100) -> list[models.Expenses]:
+    """
+    Return: list which sorted by Date and by Id
+    """
     return db.query(models.Expenses).filter(models.Expenses.date >= start_date).filter(models.Expenses.date <= end_date).order_by(models.Expenses.date).order_by(models.Expenses.id).limit(limit).all()
     
 
