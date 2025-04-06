@@ -5,7 +5,7 @@ WORKDIR /bot
 RUN pip install -U aiogram
 RUN pip install asyncio
 RUN pip install requests
-RUN pip install prettytable
+RUN pip install XlsxWriter
 
 COPY ./bot /bot
 

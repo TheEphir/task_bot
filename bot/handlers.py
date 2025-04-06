@@ -1,8 +1,9 @@
 import requests
 import utils
+from datetime import date
 
 from aiogram import Router, F, html
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto
+from aiogram.types import Message, FSInputFile, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -126,3 +127,98 @@ async def post_expense_state_descr(message: Message, state: FSMContext):
     await message.answer(f"Що бажаєте зробити?", reply_markup=MAIN_KEYBOARD)
     
 
+# ============================== Remove expense ==============================
+class RemoveExpenses(StatesGroup):
+    expense_id = State()
+
+
+@router.message(Command("remove_expense"))
+@router.callback_query(F.data == "remove_expense")
+async def get_all_expenses(callback: CallbackQuery, state: FSMContext):
+    await callback.answer("")
+    
+    expenses = requests.get(f"{API_URL}/expenses/").json()
+    # table = utils.make_table(expenses)
+    # answ = f"Всі ваші витрати\n<code>{table}</code>"
+    utils.make_xlsx_file(expenses)
+    
+    file = FSInputFile("./Expenses.xlsx", filename=f"Expenses-{date.today()}.xlsx")
+    
+    answ = f"Звіт по всім питратам"
+    # await callback.message.answer(answ, parse_mode="HTML")
+    await callback.message.answer_document(file, caption=answ)
+    await callback.message.answer(f"Напишіть ід витрати котру ви хочете видалити")
+    await state.set_state(RemoveExpenses.expense_id)
+    
+
+@router.message(RemoveExpenses.expense_id)
+async def remove_expense(message: Message, state: FSMContext):
+    expense_id = message.text
+        
+    removed_expense = requests.delete(f"{API_URL}/expense/", params={"expense_id": int(expense_id)}).json()
+    text = f"<code>{removed_expense["date"]}\t|\t{removed_expense["id"]}\t|\t{removed_expense["description"]}\t|\t{removed_expense["uah_amount"]}</code>"
+    answ = f"Витрату видалено\n{text}"
+    await message.answer(answ, parse_mode="HTML")
+    await state.clear()
+    await message.answer(f"Що бажаєте зробити?", reply_markup=MAIN_KEYBOARD)
+
+
+# ============================== Remove expense ==============================
+class PutExpense(StatesGroup):
+    to_edit_expense_id = State()
+    description = State()
+    uah_amount = State()
+    expense_date = State()
+
+
+@router.message(Command("edit_expense"))
+@router.callback_query(F.data == "edit_expense")
+async def get_all_expenses(callback: CallbackQuery, state: FSMContext):
+    await callback.answer("")
+    
+    expenses = requests.get(f"{API_URL}/expenses/").json()
+    table = utils.make_table(expenses)
+    answ = f"Всі ваші витрати\n<code>{table}</code>"
+    
+    await callback.message.answer(answ, parse_mode="HTML")
+    await callback.message.answer(f"Напишіть ід витрати котру ви хочете редагувати")
+    await state.set_state(PutExpense.to_edit_expense_id)
+
+
+@router.message(PutExpense.to_edit_expense_id)
+async def remove_expense(message: Message, state: FSMContext):
+    await state.update_data(to_edit_expense_id = message.text)
+    await message.answer(f"Як буде називатись стаття витрат?")
+    await state.set_state(PutExpense.description)
+
+
+@router.message(PutExpense.description)
+async def post_expense_state_descr(message: Message, state: FSMContext):
+    await state.update_data(description=message.text)
+    await message.answer(f"Введіть суму в гривнях.")
+    await state.set_state(PutExpense.uah_amount)
+    
+
+@router.message(PutExpense.uah_amount)
+async def post_expense_state_uah(message: Message, state: FSMContext):
+    await state.update_data(uah_amount=message.text)
+    await message.answer(f"Введіть будь ласка дату.")
+    await state.set_state(PutExpense.expense_date)
+    
+    
+@router.message(PutExpense.expense_date)
+async def post_expense_state_date(message: Message, state: FSMContext):
+    await state.update_data(expense_date=message.text)
+    expense_data = await state.get_data()
+       
+    db_item = {
+        "description": expense_data["description"],
+        "uah_amount": float(expense_data["uah_amount"]),
+        "date": utils.to_db_date(expense_data["expense_date"])
+    }
+    res = requests.put(f"{API_URL}/expense/", params={"expense_id": expense_data["to_edit_expense_id"]},json=db_item).json()
+    msg = f"Нові данні:\n<code>{res["description"]}\t|\t{res["uah_amount"]}\t|\t{res["date"]}</code>"
+    
+    await state.clear()
+    await message.answer(msg, parse_mode="HTML")
+    await message.answer(f"Що бажаєте зробити?", reply_markup=MAIN_KEYBOARD)

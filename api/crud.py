@@ -14,7 +14,7 @@ def create_expense(db: Session, expense: schemas.ExpenseBase) -> schemas.Expense
     return db_item
 
 def get_expenses_all(db: Session) -> list[models.Expenses]:
-    return db.query(models.Expenses).all()
+    return db.query(models.Expenses).order_by(models.Expenses.date).order_by(models.Expenses.id).all()
 
 
 def get_expense_by_id(db: Session, expense_id: int) -> models.Expenses:
@@ -29,8 +29,8 @@ def get_expenses_by_date_range(db: Session, start_date: date, end_date: date, li
     return db.query(models.Expenses).filter(models.Expenses.date >= start_date).filter(models.Expenses.date <= end_date).order_by(models.Expenses.date).order_by(models.Expenses.id).limit(limit).all()
     
 
-def delete_expense(db: Session, expense_id: int):
+def delete_expense(db: Session, expense_id: int) -> models.Expenses:
     item = db.get(models.Expenses, expense_id)
     db.delete(item)
     db.commit()
-    return f"{item.description} was DELETED"
+    return item

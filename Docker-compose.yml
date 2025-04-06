@@ -44,4 +44,4 @@ services:
     # depends_on:
     #   - api
     environment:
-      BOT_TOKEN: 7010347939:AAHpg3vT0dYZgK4QKe2k0omqzx51QkFjuxQ
+      BOT_TOKEN: 

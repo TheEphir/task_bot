@@ -25,7 +25,7 @@ def create_expense(expense: schemas.ExpenseBase, db: Session = Depends(get_db)):
     
 
 # DEL expense by id
-@app.delete("/expense/{expense_id}")
+@app.delete("/expense/", response_model=schemas.Expense)
 def delete_expense(expense_id: int, db:Session = Depends(get_db)):
     db_item = crud.get_expense_by_id(db, expense_id=expense_id)
     if db_item is None:
@@ -43,7 +43,7 @@ def get_expense_by_id(expense_id: int, db: Session = Depends(get_db)):
 
 
 # GET expenses all
-@app.get("/expenses", response_model=list[schemas.Expense])
+@app.get("/expenses/", response_model=list[schemas.Expense])
 def get_all_exenses(db: Session = Depends(get_db)):
     db_items = crud.get_expenses_all(db)
     if db_items is None:

@@ -1,5 +1,5 @@
 from datetime import date
-from prettytable import PrettyTable
+import xlsxwriter
 
 
 def to_db_date(text_date:str) -> str:
@@ -22,21 +22,31 @@ def to_normal_date(db_date:date) -> str:
     return f"{text[-1]}.{text[1]}.{text[0]}"
 
 
-def make_table(info: list) -> PrettyTable:
-    uah_sum = 0
-    usd_sum = 0
+def make_xlsx_file(expenses: list)-> None:
+    """
+    Make file ./Expenses.xlsx
     
-    table = PrettyTable()
-    table.field_names = ["Дата","Ід", "Назва","Сума грн","Сума дол"]
+    And fill it info from expenses: list
+    """
+    workbook = xlsxwriter.Workbook("Expenses.xlsx")
+    worksheet= workbook.add_worksheet("Expenses")
+    worksheet.write(0,0,"Дата")
+    worksheet.write(0,1,"Ід")
+    worksheet.write(0,2,"Назва")
+    worksheet.write(0,3,"Сума грн")
+    worksheet.write(0,4,"Сума дол")
 
-    for item in info:
-        uah_sum += item["uah_amount"]
-        usd_sum += item["usd_amount"]
-        
-        item["date"] = to_normal_date(item["date"])
-        table.add_row([item["date"], item["id"], item["description"], item["uah_amount"], item["usd_amount"]])
-        
-    table.add_divider()
-    table.add_row(["","","", round(uah_sum,2), usd_sum])
-    
-    return table
+    row = 0
+
+    for index, item in enumerate(expenses):
+        row += 1
+        worksheet.write(row, 0, item["date"])
+        worksheet.write(row, 1, item["id"])
+        worksheet.write(row, 2, item["description"])
+        worksheet.write(row, 3, item["uah_amount"])
+        worksheet.write(row, 4, item["usd_amount"])
+
+    worksheet.write(row+1, 2, "Всього:")
+    worksheet.write(row+1, 3, f"=SUM(D2:D{row+1})")
+    worksheet.write(row+1, 4, f"=SUM(E2:E{row+1})")
+    workbook.close()
