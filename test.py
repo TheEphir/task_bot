@@ -1,10 +1,44 @@
+import re
 import requests
-from bot import utils
-from datetime import date
-API_URL = "http://localhost:80"
 
-removed_expense = requests.delete(f"{API_URL}/expense/", params={"expense_id": 1}).json()
+uah_input = [
+    "1000",
+    "-321",
+    "321",
+    "321.321",
+    "a132", #
+    "321a",#
+    ".321",
+    "a.321",#
+    "321.a",#
+    "asd 321",#
+    "ьеь 123" #
+    ]
 
+date_input = [
+    "11.02.2025",
+    "31.22.2025",
+    "11.12.25",
+    "51.02.2025",
+    "41.02.2025",
+    "12.12.2025 ",
+    " 12.12.2025 ",
+    ".12.12.2025 ",
+    "asd 12.12.2025",
+]
 
+id_input = [
+    "11",
+    "12",
+    "a12",
+    ".12",
+    "-12",
+    "12as",
+    "1a2",
+    "33ds1",
+]
 
-print(f"expenses{date.today()}.xml")
+for item in id_input:
+    if re.findall(r'\D', item):
+        print(item)
+
