@@ -144,7 +144,7 @@ async def expense_by_range_end_state(message: Message, state: FSMContext):
             await message.answer(f"Що бажаєте зробити?", reply_markup=MAIN_KEYBOARD)
         except:
             await state.clear()
-            await message.answer(ERR_MSG)
+            await message.answer("Не зміг знайти витрати за цей період")
             await message.answer(f"Що бажаєте зробити?", reply_markup=MAIN_KEYBOARD)
     else:
         await message.answer(f"Щось не так з датою")
@@ -199,7 +199,7 @@ async def remove_expense(message: Message, state: FSMContext):
             await message.answer(ERR_MSG)
             await message.answer(f"Що бажаєте зробити?", reply_markup=MAIN_KEYBOARD)
     
-# ============================== Remove expense ==============================
+# ============================== Expense by date ==============================
 class PutExpense(StatesGroup):
     to_edit_expense_id = State()
     description = State()
@@ -226,7 +226,7 @@ async def get_all_expenses(callback: CallbackQuery, state: FSMContext):
         await state.set_state(PutExpense.to_edit_expense_id)
     except:
         await state.clear()
-        await callback.message.answer(ERR_MSG)
+        await callback.message.answer("Не зміг отримати данні за весь час")
         await callback.message.answer(f"Що бажаєте зробити?", reply_markup=MAIN_KEYBOARD)
 
 
